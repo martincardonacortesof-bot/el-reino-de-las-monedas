@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Reino de las Monedas</title>
+<style>
+:root{--bg:#10172b;--panel:#1b2743;--gold:#ffd166;--green:#6ee7a8;--red:#ff7373;--text:#f5f7ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#25375c,#0b1020 65%);color:var(--text);font-family:system-ui,Segoe UI,Arial,sans-serif;min-height:100vh}
+main{max-width:1000px;margin:auto;padding:18px}.top{text-align:center}.top h1{margin:8px 0;color:var(--gold);font-size:clamp(1.8rem,5vw,3rem);text-shadow:0 4px #7b4b19}.top p{margin:0 0 16px;color:#c9d5f5}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.stat,.panel{background:#1b2743;border:1px solid #344568;border-radius:15px;padding:12px}.stat{text-align:center}.stat b{display:block;color:var(--gold);font-size:1.35rem}.stat span{font-size:.85rem;color:#c9d5f5}
+.game{display:grid;grid-template-columns:minmax(0,2fr) minmax(230px,1fr);gap:14px}.scene{border:3px solid #52658d;border-radius:18px;overflow:hidden;background:#101a2c}.scene-head{display:flex;justify-content:space-between;padding:10px 14px;background:#202f50;font-weight:700}.arena{height:310px;position:relative;overflow:hidden;background:linear-gradient(#6ab9df 0 52%,#a5d86e 52% 65%,#42884b 65%);isolation:isolate}
+.cloud{position:absolute;font-size:2.2rem;opacity:.8}.cloud.one{left:12%;top:18px}.cloud.two{right:12%;top:52px}.mountain{position:absolute;bottom:35%;font-size:5rem;opacity:.55}.m1{left:5%}.m2{right:10%}
+.ground{position:absolute;bottom:0;height:34%;width:100%;background:repeating-linear-gradient(90deg,#378148 0 30px,#419452 30px 60px);border-top:8px solid #a4d86b}
+.player,.enemy,.coin,.chest{position:absolute;z-index:2;transform:translate(-50%,-50%);filter:drop-shadow(0 4px 2px #15203366);user-select:none}.player{left:18%;top:65%;font-size:3rem;transition:left .25s,top .25s}.enemy{left:72%;top:65%;font-size:2.8rem}.coin{font-size:2rem;color:var(--gold);animation:bob 1s infinite alternate}.c1{left:38%;top:48%}.c2{left:53%;top:68%}.c3{left:61%;top:40%}.chest{left:87%;top:67%;font-size:2.3rem}
+@keyframes bob{to{transform:translate(-50%,-62%) rotate(8deg)}}
+.arena-message{position:absolute;z-index:4;left:50%;top:12%;transform:translateX(-50%);background:#10172bdc;border:1px solid #ffffff44;padding:7px 12px;border-radius:12px;text-align:center;font-size:.9rem;max-width:90%;white-space:normal}
+.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;background:#16213a}.controls button{min-height:48px}.controls button:first-child{grid-column:2}
+button{border:0;border-radius:11px;padding:11px 13px;background:#34486d;color:white;font-weight:750;font-size:.95rem;cursor:pointer;transition:transform .12s,filter .12s}button:hover{filter:brightness(1.15)}button:active{transform:scale(.97)}button:disabled{opacity:.4;cursor:not-allowed}.primary{background:#f5b942;color:#30200a}.green{background:#25895d}.danger{background:#a9404d}.side{display:flex;flex-direction:column;gap:12px}.panel h2{font-size:1.1rem;margin:0 0 9px}.panel p{color:#d0d9f0;line-height:1.45;margin:6px 0}.shop-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-top:1px solid #344568}.shop-item small{display:block;color:#b8c7e7}.bar{height:11px;background:#344568;border-radius:99px;overflow:hidden;margin:7px 0 10px}.bar div{height:100%;width:0;background:linear-gradient(90deg,#53db98,#d8f66d);transition:width .2s}.log{min-height:70px;font-size:.92rem;color:#ffe6a1}.footer{text-align:center;color:#9cafd5;font-size:.8rem;padding:14px}.hidden{display:none!important}
+@media(max-width:720px){main{padding:10px}.game{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.arena{height:260px}.side{display:grid;grid-template-columns:1fr}.top p{font-size:.9rem}}
+</style>
+</head>
+<body>
+<main>
+<header class="top">
+<h1>🪙 El Reino de las Monedas</h1>
+<p>Explora, recoge tesoros, mejora tu espada y derrota al jefe final.</p>
+</header>
+<section class="stats">
+<div class="stat"><span>🪙 Monedas</span><b id="coins">0</b></div>
+<div class="stat"><span>❤️ Vidas</span><b id="lives">3</b></div>
+<div class="stat"><span>⭐ Experiencia</span><b id="xp">0</b></div>
+<div class="stat"><span>🗺️ Nivel</span><b id="level">1 / 5</b></div>
+</section>
+<section class="game">
+<div class="scene">
+<div class="scene-head"><span id="worldName">🌳 Bosque Verde</span><span id="swordLabel">⚔️ Espada nivel 1</span></div>
+<div class="arena" id="arena">
+<div class="cloud one">☁️</div><div class="cloud two">☁️</div><div class="mountain m1">⛰️</div><div class="mountain m2">🌲</div>
+<div class="ground"></div>
+<div class="arena-message" id="arenaMessage">¡Bienvenido, héroe! Recoge las monedas.</div>
+<div class="player" id="player">🧙</div><div class="enemy" id="enemy">👾</div>
+<div class="coin c1" id="coin1">🪙</div><div class="coin c2" id="coin2">🪙</div><div class="coin c3" id="coin3">🪙</div><div class="chest" id="chest">🎁</div>
+</div>
+<div class="controls">
+<button id="up" aria-label="Mover arriba">⬆️</button>
+<button id="left">⬅️ Izquierda</button><button id="down">⬇️ Abajo</button><button id="right">➡️ Derecha</button>
+</div>
+</div>
+<aside class="side">
+<div class="panel">
+<h2>🎯 Tu misión</h2><p id="mission">Recoge 3 monedas y vence al enemigo para avanzar.</p>
+<div class="bar"><div id="progress"></div></div><small id="progressText">Progreso del nivel: 0%</small>
+</div>
+<div class="panel">
+<h2>🛍️ Tienda del reino</h2>
+<div class="shop-item"><div><b>⚔️ Espada mejorada</b><small>Más fuerza en combate</small><small id="swordCost">Precio: 20 monedas</small></div><button id="buySword" class="primary">Comprar</button></div>
+<div class="shop-item"><div><b>❤️ Poción de vida</b><small>Recupera una vida (máx. 5)</small><small>Precio: 15 monedas</small></div><button id="buyPotion" class="green">Comprar</button></div>
+<div class="shop-item"><div><b>🛡️ Escudo</b><small>Reduce el daño del jefe</small><small id="shieldCost">Precio: 25 monedas</small></div><button id="buyShield">Comprar</button></div>
+</div>
+<div class="panel"><h2>📜 Diario de aventura</h2><p class="log" id="log">¡Tu aventura comienza! Usa las flechas para moverte por el mapa.</p><button id="save" class="green">💾 Guardar partida</button> <button id="reset" class="danger">Reiniciar</button></div>
+</aside>
+</section>
+<div class="footer">Controles: flechas del teclado o botones. Recoge 🪙 y abre 🎁. En el jefe final, pulsa ESPACIO para atacar.</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const worlds=[
+ {name:"🌳 Bosque Verde",enemy:"👾",chest:"🎁",mission:"Recoge 3 monedas y vence al enemigo para avanzar."},
+ {name:"🏜️ Desierto Dorado",enemy:"🦂",chest:"🧰",mission:"¡El desierto es peligroso! Reúne tesoros y gana el combate."},
+ {name:"❄️ Montañas Heladas",enemy:"🐺",chest:"🎁",mission:"¡Cuidado con el lobo! Explora y prepara tu equipo."},
+ {name:"🌋 Volcán de Fuego",enemy:"🔥",chest:"💎",mission:"El calor aprieta. Recoge tesoros y demuestra tu fuerza."},
+ {name:"🏰 Castillo Oscuro",enemy:"🐉",chest:"👑",mission:"¡Derrota al dragón final para salvar el reino!"}
+];
+const initial=()=>({level:1,coins:0,lives:3,xp:0,sword:1,shield:0,x:18,y:65,collected:[],chestOpened:false,enemyHP:1,enemyDefeated:false,won:false});
+let s=initial();
+function log(t){$("log").textContent=t;$("arenaMessage").textContent=t}
+function saveGame(){try{localStorage.setItem("reinoMonedasSave",JSON.stringify(s));log("Partida guardada en este navegador. ¡Tu progreso está a salvo!")}catch(e){log("No se pudo guardar automáticamente en este navegador.")}}
+function loadGame(){try{const v=localStorage.getItem("reinoMonedasSave");if(v){s={...initial(),...JSON.parse(v)};return true}}catch(e){}return false}
+function update(){
+$("coins").textContent=s.coins;$("lives").textContent="❤️ ".repeat(Math.max(0,s.lives))||"0";$("xp").textContent=s.xp;$("level").textContent=s.level+" / 5";
+$("worldName").textContent=worlds[s.level-1].name;$("swordLabel").textContent="⚔️ Espada nivel "+s.sword;
+$("mission").textContent=s.won?"¡Reino salvado! ¡Eres una leyenda!":worlds[s.level-1].mission;
+$("swordCost").textContent="Precio: "+(20*s.sword)+" monedas";$("shieldCost").textContent="Precio: "+(25*(s.shield+1))+" monedas";
+$("buySword").disabled=s.coins<20*s.sword||s.won;$("buyPotion").disabled=s.coins<15||s.lives>=5||s.won;$("buyShield").disabled=s.coins<25*(s.shield+1)||s.won;
+$("player").style.left=s.x+"%";$("player").style.top=s.y+"%";
+$("enemy").textContent=worlds[s.level-1].enemy;$("enemy").classList.toggle("hidden",s.enemyDefeated||s.won);
+$("chest").textContent=worlds[s.level-1].chest;$("chest").classList.toggle("hidden",s.chestOpened||s.won);
+for(let i=1;i<=3;i++)$("coin"+i).classList.toggle("hidden",s.collected.includes(i)||s.won);
+$("progress").style.width=(s.won?100:Math.round((s.collected.length+(s.enemyDefeated?1:0))/4*100))+"%";
+$("progressText").textContent=s.won?"¡100% completado!": "Progreso del nivel: "+Math.round((s.collected.length+(s.enemyDefeated?1:0))/4*100)+"%";
+if(s.won){$("arenaMessage").textContent="🏆 ¡CAMPEÓN DEL REINO!";$("enemy").classList.add("hidden");$("chest").classList.add("hidden")}
+}
+function positionDistance(a,b){return Math.hypot(s.x-a,s.y-b)}
+function collectNearby(){
+const spots={1:[38,48],2:[53,68],3:[61,40]};
+for(let i=1;i<=3;i++){if(!s.collected.includes(i)){const p=spots[i];if(positionDistance(p[0],p[1])<14){s.collected.push(i);s.coins+=5;s.xp+=2;log("¡Moneda recogida! +5 monedas y +2 XP.");return true}}}
+if(!s.chestOpened&&positionDistance(87,67)<16){s.chestOpened=true;s.coins+=15;s.xp+=5;log("¡Cofre abierto! Encontraste 15 monedas y 5 XP.");return true}
+return false;
+}
+function move(dx,dy){
+if(s.won)return;
+s.x=Math.max(5,Math.min(95,s.x+dx));s.y=Math.max(34,Math.min(80,s.y+dy));
+if(!collectNearby())log("Explorando... acércate a las 🪙 o al cofre 🎁.");
+update();saveQuiet();
+}
+function saveQuiet(){try{localStorage.setItem("reinoMonedasSave",JSON.stringify(s))}catch(e){}}
+function attack(){
+if(s.won)return;
+if(positionDistance(72,65)>22){log("Acércate al enemigo con las flechas antes de atacar.");return}
+if(s.collected.length<3&&!s.chestOpened){log("¡Recoge algunas monedas primero para prepararte!");}
+const damage=s.sword+s.shield;
+s.enemyHP-=damage;
+if(s.enemyHP<=0){s.enemyDefeated=true;s.coins+=12;s.xp+=10;log("¡Enemigo derrotado! +12 monedas y +10 XP.");}
+else{if(s.shield===0)s.lives--;log("¡Combate! El enemigo resiste. "+(s.shield?"Tu escudo te protege.":"Perdiste una vida."));if(s.lives<=0){s.lives=3;s.coins=Math.max(0,s.coins-5);s.enemyHP=1;log("Te recuperaste en el punto de control. Perdiste 5 monedas.")}}
+if(s.enemyDefeated){if(s.level===5){s.won=true;log("¡Derrotaste al jefe final! ¡SALVASTE EL REINO! 🏆")}else{const old=s.level;s.level++;s.x=18;s.y=65;s.collected=[];s.chestOpened=false;s.enemyHP=s.level===5?4:1;s.enemyDefeated=false;log("¡Nivel "+(old+1)+" desbloqueado! El viaje continúa.")}}
+update();saveQuiet();
+}
+$("up").onclick=()=>move(0,-7);$("down").onclick=()=>move(0,7);$("left").onclick=()=>move(-7,0);$("right").onclick=()=>move(7,0);
+$("buySword").onclick=()=>{let c=20*s.sword;if(s.coins>=c){s.coins-=c;s.sword++;log("¡Espada mejorada al nivel "+s.sword+"!");update();saveQuiet()}};
+$("buyPotion").onclick=()=>{if(s.coins>=15&&s.lives<5){s.coins-=15;s.lives++;log("¡Poción usada! Recuperaste una vida.");update();saveQuiet()}};
+$("buyShield").onclick=()=>{let c=25*(s.shield+1);if(s.coins>=c){s.coins-=c;s.shield++;log("¡Escudo mejorado! Te ayudará en combate.");update();saveQuiet()}};
+$("save").onclick=saveGame;
+$("reset").onclick=()=>{if(confirm("¿Seguro que quieres reiniciar toda la aventura?")){s=initial();s.enemyHP=1;try{localStorage.removeItem("reinoMonedasSave")}catch(e){}log("Nueva partida. ¡Buena suerte, héroe!");update()}};
+document.addEventListener("keydown",e=>{const k=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k))e.preventDefault();if(k==="arrowup"||k==="w")move(0,-7);if(k==="arrowdown"||k==="s")move(0,7);if(k==="arrowleft"||k==="a")move(-7,0);if(k==="arrowright"||k==="d")move(7,0);if(k===" ")attack()});
+if(!loadGame()){s.enemyHP=1;}else if(s.level>1&&!s.enemyDefeated)s.enemyHP=s.level===5?4:1;
+update();if(s.coins>0||s.level>1)log("¡Partida recuperada! Sigue donde lo dejaste.");
+</script>
+</body>
+</html>
